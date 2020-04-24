@@ -250,8 +250,11 @@ function editForm(id){
 //delete ajax request are here
 function deleteData(id){
 	event.preventDefault();  //this is importent
-	//var csrf_token = $('meta[name="csrf-token"]').attr('content');
+	var csrf_token = $('meta[name="csrf-token"]').attr('content');
 	var id = id; //alert('deleteData '+id);
+	
+	var urlTo = "{{ route('all-contact.destroy', ':id') }}" 
+	urlTo = urlTo.replace(':id', id ); //resource rout not work without this 
 
 	Swal.fire({
 	  title: 'Are you sure to Delete?',
@@ -267,7 +270,11 @@ function deleteData(id){
 			//alert('work');
 
 			$.ajax({
-				url:"all-contact/destroy/"+id,
+				type : "DELETE", //'_method': 'DELETE' not require in data section
+				//type : "POST", //'_method': 'DELETE', must be use in data section
+				//url:"all-contact/destroy/"+id,
+				url : urlTo,
+				data : {"_token": csrf_token}, //csrf token is must be use
 				success : function(data) {
 					if(data.success){ //alert(data.success);
 						table1.ajax.reload();

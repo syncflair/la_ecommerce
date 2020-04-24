@@ -161,7 +161,7 @@ class ContactController extends Controller
             return response()->json(['success'=> 'Record is successfully deleted']);
         }else{
             return response()->json(['errors'=> 'Something is wrong..']);
-        }
+        }//*/
     }
 
 

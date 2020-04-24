@@ -107,8 +107,7 @@ Route::get('/view-order/{order_id}', 'OrderController@view_order');
 //ajax and Yajra dataTable 
 Route::resource('all-contact','ContactController');
 //Route::get('/get-contact', 'ContactController@get_contact')->name('get-contact'); //get-contact url in ajax
-
-Route::get('all-contact/destroy/{id}', 'ContactController@destroy');
+//Route::get('all-contact/destroy/{id}', 'ContactController@destroy'); // --work with url:"all-contact/destroy/"+id,
 
 
 
