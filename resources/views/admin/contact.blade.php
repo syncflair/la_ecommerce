@@ -3,7 +3,8 @@
 
 @section('extra_meta_tag')
 <!--Make sure to add this in the meta tag of your view -->
- <meta name="csrf-token" content="{{ csrf_token() }}">
+<meta name="csrf-token" content="{{ csrf_token() }}" >
+
 @endsection
 
 @section('extra_page_style')
@@ -25,6 +26,8 @@
     border: 1px solid transparent; border-radius: 2px;}
  	.pagination li .active{background: black; color: #ffffff;}
  	</style>
+
+
 
 @endsection
 
@@ -60,6 +63,7 @@
 			<table id="contact_table" class="table table-striped table-bordered display">
 			  <thead>
 				  <tr>
+				  	
 					  <th>ID</th>
 					  <th>Name</th>
 					  <th>Email</th>
@@ -67,6 +71,7 @@
 					  <th>Image</th>
 					  <th>Status</th>
 					  <th>Actions</th>
+					  <th><button type="button" id="bulk_delete" class="btn btn-warning">Delete</button></th>
 				  </tr>
 			  </thead>   
 			 
@@ -82,6 +87,8 @@
 
 		@include('panels.modal_form') <!--Bootstrap Contact form include here-->
 
+		
+
 
 @endsection()
 
@@ -95,6 +102,16 @@
 <script src="{{ asset('/backend/validator/validator.min.js') }}"></script>
 
 <script>
+//this code solve token mismatch problem. but must be add meta csrf at top
+/*$.ajaxSetup({
+    headers: {
+        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'), 'Content-Type': 'application/json'
+    }
+   // headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'), 'Content-Type': 'application/json' }
+}); //*/
+
+
+
 
 $.fn.dataTable.ext.errMode = 'none'; //scape error message
 //$(document).ready(function(){
@@ -129,123 +146,243 @@ $.fn.dataTable.ext.errMode = 'none'; //scape error message
           		orderable: false, searchable: false
           },
           {data:'contact_status', name:'contact_status'},
-          {data:'action', name:'action', orderable: false, searchable: false }
+          {data:'action', name:'action', orderable: false, searchable: false },
+          {data:'checkbox', name:'checkbox', orderable: false, searchable: false },
+          /*{data:'checkbox', name:'checkbox',
+          		render: function(data, type, full, meta){          		
+          			return '<form type="post">{{ csrf_field() }}<input type="checkbox" name="contact_checkbox[]" class="contact_checkbox" id="'+full.id+'" value="" /></form>';
+          		},
+          		orderable: false, searchable: false
+          }, //this code also work//*/
+          
+        
         ]
 	});
 
 
 //});
 
+$('.close-form').on('click', function(){
+	$('#form_modal form')[0].reset();
+	$('#fileInput').val(null);
+	$('#errors_output').html('');	
+	//$('#form_modal form')[0].trigger("reset");
+})
+
 //Call modal frome
 function addForm() {
 	//alert('ok');
     //save_method = "add";
-    $('input[name_method]').val('POST');
-    $('#form_modal').modal('show');
+    $('#form_action').val("Add");
+    //$('input[name_method]').val('POST');
+    $('#contact_status').prop('checked', false);
     $('#form_modal form')[0].reset();
-    $('.modal-title').text('Add Contact');
-    $('#insertbutton').text('Add Contact');//*/
+    //$('#contact_status').val(3);
+  	//$('#contact_status').removeAttr('checked');
+  	
+    //$('.modal-title').text('Add Contact');
+    //$('#insertbutton').text('Add Contact');//*/
+    $("#input_method").val("POST"); //change hidden method type to POST default is PATCH
+    
+    $('#form_modal').modal('show');
   }
 
 
-  //Insert data by Ajax
-	 $(function(){
-	    //$('#form_modal form').validator().on('submit', function (e) {	    	
-	    $('#form_modal form').on('submit', function (e) {
-	    	e.preventDefault(); // this prevents the form from submitting
+  //Insert/UPdate data by Ajax  	
+ $(function(){
+    //$('#form_modal form').validator().on('submit', function (e) {	    	
+    $('#form_modal form').on('submit', function (e) {
+    	e.preventDefault(); // this prevents the form from submitting
+    	
+    	/*
+    	var id = $('#id').val(); 
+     	if($('#form_action').val() == 'Add'){
+       			url = "{{ route('all-contact.store') }}"; 
+   		}
+       if($('#form_action').val() == 'Update'){ var urlTo = "{{ route('all-contact.update', ':id') }}" ;
+				url = urlTo.replace(':id', id ); 				
+			}*/
 
-	       // if (!e.isDefaultPrevented()){
-	            /*var id = $('#id').val();
-	            if (save_method == 'add') url = "{{ url('all-contact') }}";
-	            else url = "{{ url('all-contact') . '/' }}" + id;//*/
-	            $.ajax({	                
-	                type : "POST", //find store method if type=POST
-	                //url : url,
-	                //url : "{{ url('all-contact') }}",	 
-	                url : "{{ route('all-contact.store') }}",               
-	                data: new FormData($("#form_modal form")[0]),
-	                cache:false,
-	               	contentType: false,
-	               	processData: false,
-	               	//dataType: 'json', //work without dataType
-	                success : function(data) {	
-	                   if(data.errors)
-		                {
-		                    var error_html = '';
-		                    for(var count = 0; count < data.errors.length; count++)
-		                    {
-		                        error_html += '<p class="alert alert-danger">'+data.errors[count]+'</p>';
-		                    }
+		if($('#form_action').val() == 'Add'){
+            $.ajax({	                
+                type : "POST", //find store method if type=POST	              
+                url : "{{ route('all-contact.store') }}",                         
+            	data: new FormData($("#form_modal form")[0]),
+                //data : $('#form_modal form').serialize(),
+                cache:false,
+               	contentType: false,
+               	processData: false,
+               	//dataType: 'json', //work without dataType               	
+               	success : function(data) {	
+                   if(data.errors)
+	                {
+	                    var error_html = '';
+	                    for(var count = 0; count < data.errors.length; count++)
+	                    {
+	                        error_html += '<p class="alert alert-danger">'+data.errors[count]+'</p>';
+	                    }
 
-		                    $('#errors_output').html(error_html);
-		                   /* Swal.fire({	                   	
-		                      title: "Opps..!",
-		                      html: '<h2>'+error_html+'</h2>',
-		                      icon: "error",
-		                      button: "Great!",
-		                    });//*/
-		                }
-		                if(data.success){
-		                	//$('#errors_output').html('<h1>'+data.message+'</h1>');           	
-		                	//
-		                	$('#contact_status').val(0).prop('checked', false);
-		                	$('#form_modal form')[0].reset();
-		                	$('#form_modal').modal('hide');
-		                	
-		                	Swal.fire({	                   	
-		                      title: "Good job!",
-		                      html: '<h2>'+data.success+'</h2>',
-		                      icon: "success",
-		                      button: "Great!",
-		                    });
-		                    //$("#form_modal form #checkbox").prop("checked", false);
-		                   // $("#checkbox").prop("checked", false);
-		                   	
-		                	//$("#form_modal form ").trigger('reset');
-		                	$('#errors_output').html('');
-		                	table1.ajax.reload( null, false );               
-		                    
-		                	//$('#errors_output').html(data.success);
-		                }//*/	                  
-	                }/*,
-	                error : function(data){
-	                    Swal.fire({
-	                    	//position: 'top-end',
-	                    	icon: "error",
-	                        title: 'Oops, Something wrong..',
-	                        icon: "success",
-	                        html: '<p>'+data.errors+'</p>',
-	                        timer: '1500'
-	                    })
-	                }//*/
-	            });
-	            //return false;
-	       // }
+	                    $('#errors_output').html(error_html);
+	                   
+	                }
+	                if(data.success){
+	                	//$('#errors_output').html('<h1>'+data.message+'</h1>');           	
+	                	//
+	                	$('#contact_status').val(0);
+	                	$('#contact_status').prop('checked', false);
+	                	$('#fileInput').val(null);
+	                	$('#form_modal form')[0].reset();
+	                	$('#form_modal').modal('hide');
+	                	
+	                	Swal.fire({	                   	
+	                      title: "Good job!",
+	                      html: '<h2>'+data.success+'</h2>',
+	                      icon: "success",
+	                      button: "Great!",
+	                    });
+	                    //$("#form_modal form #checkbox").prop("checked", false);
+	                   // $("#checkbox").prop("checked", false);
+	                   	
+	                	//$("#form_modal form ").trigger('reset');
+	                	$('#errors_output').html('');
+	                	table1.ajax.reload( null, false );               
+	                    
+	                	//$('#errors_output').html(data.success);
+	                }	                  
+                }
+            });
+            //return false;
+        }//end Insert check //*/
+       
+       if($('#form_action').val() == 'Update'){ 
+        	//var csrf_token = $('input[name="_token"]').val();
+        	var id = $('#id').val(); 
+        	var urlTo = "{{ route('all-contact.update', ':id') }}" ;
+			urlTo = urlTo.replace(':id', id ); //resource rout not work without this 
+			
+			$.ajax({	  
+               // type: "PATCH",	
+                type: 'POST',              
+                url : urlTo,  
+                data:  new FormData($("#form_modal form")[0]),           
+                //data: { id:id, },
+                //data : $("#form_modal form").serialize(),
+                cache:false,
+               	contentType: false,
+               	processData: false,
+               	headers: {
+		            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'), '_method': 'PATCH'
+		        },
+               	dataType: 'json', //work without dataType
+                success : function(data) {	
+                	 if(data.errors)
+	                {
+	                    var error_html = '';
+	                    for(var count = 0; count < data.errors.length; count++)
+	                    {
+	                        error_html += '<p class="alert alert-danger">'+data.errors[count]+'</p>';
+	                    }
+	                    $('#errors_output').html(error_html);	                   
+	                }
+	                if(data.success){
+	                	//$('#errors_output').html('<h1>'+data.message+'</h1>');           	
+	                	//
+	                	$('#contact_status').val(0);
+	                	$('#contact_status').prop('checked', false);
+	                	$('#fileInput').val(null);
+	                	$('#form_modal form')[0].reset();
+	                	$('#form_modal').modal('hide');
+	                	
+	                	Swal.fire({	                   	
+	                      title: "Good job!",
+	                      html: '<h2>'+data.success+'</h2>',
+	                      icon: "success",
+	                      button: "Great!",
+	                    });
+	                    //$("#form_modal form #checkbox").prop("checked", false);
+	                   // $("#checkbox").prop("checked", false);
+	                   	
+	                	//$("#form_modal form ").trigger('reset');
+	                	$('#errors_output').html('');
+	                	table1.ajax.reload( null, false );               
+	                    
+	                	//$('#errors_output').html(data.success);
+	                }                                     
+                }//end success
+            });
+
+       }//end update check//*/
 
 
-	    });
+    });
+});
+
+
+//Call Edit Form with Data
+function editForm(id){
+	event.preventDefault();  //this is importent
+	//var id = id; 	
+	var urlTo = "{{ route('all-contact.edit', ':id') }}" 
+	urlTo = urlTo.replace(':id', id ); //resource rout not work without this 
+    
+    //$('#form_modal form')[0].reset();
+	$.ajax({
+		type : "GET", //'_method': 'DELETE' not require in data section
+		dataType:"JSON",
+		url : urlTo,
+		success : function(data) {	
+
+			///$('input[name=_method]').val('PATCH');  		
+			$('.modal-title').text('Edit Contact');
+    		$('#insertbutton').text('Update Data');
+    		$('#form_action').val('Update');
+    		//$("#form_modal form").attr("method", "PATCH");
+    		$("#input_method").val("PATCH");
+
+    		$('#id').val(data.id);
+            $('#contact_name').val(data.contact_name);
+            $('#contact_phone').val(data.contact_phone);
+            $('#contact_email').val(data.contact_email);
+            //$('#contact_status').val(data.contact_status).prop('checked', true);
+            if(data.contact_status == 1){
+            	$('#contact_status').val(data.contact_status);
+            	//$('#contact_status').attr("checked", "checked");
+            	$('#contact_status').prop("checked", true);
+            }else{
+            	$('#contact_status').val(data.contact_status);
+            	$('#contact_status').removeAttr("checked");
+            }  
+            $('#form_modal').modal('show'); //*/         
+		}
+	});
+}
+
+
+//Display Single Data
+function showData(id) {
+	event.preventDefault();  //this is importent
+	//var csrf_token = $('meta[name="csrf-token"]').attr('content');
+	//var id = id; 	
+	var urlTo = "{{ route('all-contact.show', ':id') }}" 
+	urlTo = urlTo.replace(':id', id ); //resource rout not work without this 
+
+	$.ajax({
+		type : "GET", //'_method': 'DELETE' not require in data section
+		url : urlTo,
+		//data : {"_token": csrf_token}, //csrf token is must be use
+		success : function(data) {
+			if(data.success){ //alert(data.success);				
+			  	Swal.fire(
+				  'success!',
+				   data.success,
+				  'success'
+				)
+		  	}
+		}
 	});
 
-function showData(id) {
-	alert('showForm '+id);
-	//$('#contact_table').dataTable().ajax.reload();
-	
-	/*var id = id;
-	//alert(id);
-	swal({
-	  title: "Show Contact Information!",
-	  text: "Your contact id is - "+ id,
-	  icon: "success",
-	  button: "Done!",
-	});//*/
-
 }
 
-//delete ajax request are here
-function editForm(id){
-	var id = id; alert('editForm '+id);
-
-}
 
 //delete ajax request are here
 function deleteData(id){
@@ -304,6 +441,102 @@ function deleteData(id){
 
 }//end deleteData
 
+
+//Delete multiple Data
+$(document).on('click','#bulk_delete', function(){
+	event.preventDefault();
+	var csrf_token = $('meta[name="csrf-token"]').attr('content');
+	var id = []; 
+
+	Swal.fire({
+	  title: 'Are you sure to Delete Contact?',
+	  text: "You won't be able to revert this!",
+	  icon: 'warning',
+	  showCancelButton: true,
+	  confirmButtonColor: '#3085d6',
+	  cancelButtonColor: '#d33',	
+	  confirmButtonText: 'Yes, delete it!'
+	}).then( (result) => {
+
+		if ( result.value ) {
+			//get all data and push into id array
+			$('.contact_checkbox:checked').each(function(){
+				id.push($(this).val());
+			});
+
+			if(id.length > 0){
+				$.ajax({
+					method:"get",
+					url: "{{ route('all-contact.destroybulk') }}", 
+					//url:"all-contact/destroybulk",
+					data: {id:id, "_token": csrf_token},				
+					success : function(data) {
+						if(data.success){ //alert(data.success);
+							table1.ajax.reload();
+						  	Swal.fire(
+							  'Deleted!',
+							   data.success,
+							  'success'
+							)
+					  	}
+					  	if(data.errors){
+					  		Swal.fire(
+							  'Opps!',
+							   data.errors,
+							  'error'
+							)
+					  	}
+					}
+				}); 
+			}else{
+				//alert('Please select at last one Contact');
+				Swal.fire(
+				  'Opps!',
+				   'Please select at last one Contact',
+				  'error'
+				)				
+			}
+
+		}/*else{
+			Swal.fire({
+				icon: 'info',
+				text: 'Your data is safe!'
+			})
+		}//*/
+	})
+
+
+
+	/*
+	//using Alert
+	if(confirm("Are you sure you want to delete this Data?")){
+
+		$('.contact_checkbox:checked').each(function(){
+			id.push($(this).val());
+		});
+
+		if(id.length > 0){
+			//alert (id);
+			$.ajax({
+				//type : "POST",
+				method:"get",
+				url: "{{ route('all-contact.destroybulk') }}", 
+				//url:"all-contact/destroybulk",
+				data: {id:id, "_token": csrf_token},
+				success:function(data){
+					alert(data.success);
+					table1.ajax.reload();
+				}
+
+			})
+
+		}else{
+			alert('Please select at last one checkbox');
+		}
+	}//*/
+
+
+});
 
 //Change Checkbox value for all form
 $('form').on('change', 'input[type=checkbox]', function() {

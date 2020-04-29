@@ -104,10 +104,14 @@ Route::get('/all-order', 'OrderController@all_order');
 Route::get('/view-order/{order_id}', 'OrderController@view_order');
 
 
-//ajax and Yajra dataTable 
+//ajax and Yajra dataTable  for Contact
+Route::get('all-contact/destroybulk', 'ContactController@destroy_multiple')->name('all-contact.destroybulk');//destroybulk route must be add before the resource route. For extra methed in resource controller
 Route::resource('all-contact','ContactController');
 //Route::get('/get-contact', 'ContactController@get_contact')->name('get-contact'); //get-contact url in ajax
 //Route::get('all-contact/destroy/{id}', 'ContactController@destroy'); // --work with url:"all-contact/destroy/"+id,
+
+
+
 
 
 
